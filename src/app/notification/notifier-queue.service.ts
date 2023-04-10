@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import { NotifierAction } from './models/notifier-action.model';
+
+
 /**
  * Notifier queue service
  *
@@ -10,43 +13,59 @@ import { Subject } from 'rxjs';
  *
  * Technical sidenote:
  * An action looks pretty similar to the ones within the Flux / Redux pattern.
- */ 
-@Injectable({
-  providedIn: 'root'
-})
+ */
+@Injectable()
 export class NotifierQueueService {
-  public actionStream: Subject<any>;
-  private actionQueue: Array<any>;
-  private isActionInProgress : boolean;
-  constructor() {
-    this.actionStream = new Subject();
+  /**
+   * Stream of actions, subscribable from outside
+   */
+  public readonly actionStream: Subject<NotifierAction>;
+
+  /**
+   * Queue of actions
+   */
+  private actionQueue: Array<NotifierAction>;
+
+  /**
+   * Flag, true if some action is currently in progress
+   */
+  private isActionInProgress: boolean;
+
+  /**
+   * Constructor
+   */
+  public constructor() {
+    this.actionStream = new Subject<NotifierAction>();
     this.actionQueue = [];
     this.isActionInProgress = false;
-   }
-     /**
-     * Push a new action to the queue, and try to run it
-     *
-     * @param action Action object
-     */
-     push(action: any) {
-      this.actionQueue.push(action);
-      this.tryToRunNextAction();
   }
+
+  /**
+   * Push a new action to the queue, and try to run it
+   *
+   * @param action Action object
+   */
+  public push(action: NotifierAction): void {
+    this.actionQueue.push(action);
+    this.tryToRunNextAction();
+  }
+
   /**
    * Continue with the next action (called when the current action is finished)
    */
-  continue() {
-      this.isActionInProgress = false;
-      this.tryToRunNextAction();
+  public continue(): void {
+    this.isActionInProgress = false;
+    this.tryToRunNextAction();
   }
+
   /**
    * Try to run the next action in the queue; we skip if there already is some action in progress, or if there is no action left
    */
-  tryToRunNextAction() {
-      if (this.isActionInProgress || this.actionQueue.length === 0) {
-          return; // Skip (the queue can now go drink a coffee as it has nothing to do anymore)
-      }
-      this.isActionInProgress = true;
-      this.actionStream.next(this.actionQueue.shift()); // Push next action to the stream, and remove the current action from the queue
+  private tryToRunNextAction(): void {
+    if (this.isActionInProgress || this.actionQueue.length === 0) {
+      return; // Skip (the queue can now go drink a coffee as it has nothing to do anymore)
+    }
+    this.isActionInProgress = true;
+    this.actionStream.next(this.actionQueue.shift()); // Push next action to the stream, and remove the current action from the queue
   }
 }

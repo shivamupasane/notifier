@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { NotifierQueueService } from 'angular-notifier/lib/services/notifier-queue.service';
 import { NotifierService } from '../notification/notifier.service';
 @Component({
   selector: 'app-ng-notify',

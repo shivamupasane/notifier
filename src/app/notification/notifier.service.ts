@@ -1,6 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { NotifierAction } from './models/notifier-action.model';
+import { NotifierConfig } from './models/notifier-config.model';
+import { NotifierNotificationOptions } from './models/notifier-notification.model';
+
 import { NotifierQueueService } from './notifier-queue.service';
-import { NotifierConfig, NotifierConfigToken } from './NotifierConfig';
+import { NotifierConfigToken } from './notifier.tokens';
+
 /**
  * Notifier service
  *
@@ -8,90 +14,113 @@ import { NotifierConfig, NotifierConfigToken } from './NotifierConfig';
  * block of an applications, it can be used to show new notifications, and hide existing ones. Internally, it transforms API calls into
  * actions, which then get thrown into the action queue - eventually being processed at the right moment.
  */
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable()
 export class NotifierService {
-  private config : any = undefined;
-  constructor(private queueService: NotifierQueueService) { }
-   /**
-     * Get the notifier configuration
-     *
-     * @returns Notifier configuration
-     */
-   getConfig() {
+  /**
+   * Notifier queue service
+   */
+  private readonly queueService: NotifierQueueService;
+
+  /**
+   * Notifier configuration
+   */
+  private readonly config: NotifierConfig;
+
+  /**
+   * Constructor
+   *
+   * @param notifierQueueService Notifier queue service
+   * @param config               Notifier configuration, optionally injected as a dependency
+   */
+  public constructor(notifierQueueService: NotifierQueueService, @Inject(NotifierConfigToken) config: NotifierConfig) {
+    this.queueService = notifierQueueService;
+    this.config = config;
+  }
+
+  /**
+   * Get the notifier configuration
+   *
+   * @returns Notifier configuration
+   */
+  public getConfig(): NotifierConfig {
     return this.config;
-}
-/**
- * Get the observable for handling actions
- *
- * @returns Observable of NotifierAction
- */
-get actionStream() {
+  }
+
+  /**
+   * Get the observable for handling actions
+   *
+   * @returns Observable of NotifierAction
+   */
+  public get actionStream(): Observable<NotifierAction> {
     return this.queueService.actionStream.asObservable();
-}
-/**
- * API: Show a new notification
- *
- * @param notificationOptions Notification options
- */
-show(notificationOptions: any) {
+  }
+
+  /**
+   * API: Show a new notification
+   *
+   * @param notificationOptions Notification options
+   */
+  public show(notificationOptions: NotifierNotificationOptions): void {
     this.queueService.push({
-        payload: notificationOptions,
-        type: 'SHOW',
+      payload: notificationOptions,
+      type: 'SHOW',
     });
-}
-/**
- * API: Hide a specific notification, given its ID
- *
- * @param notificationId ID of the notification to hide
- */
-hide(notificationId: any) {
+  }
+
+  /**
+   * API: Hide a specific notification, given its ID
+   *
+   * @param notificationId ID of the notification to hide
+   */
+  public hide(notificationId: string): void {
     this.queueService.push({
-        payload: notificationId,
-        type: 'HIDE',
+      payload: notificationId,
+      type: 'HIDE',
     });
-}
-/**
- * API: Hide the newest notification
- */
-hideNewest() {
+  }
+
+  /**
+   * API: Hide the newest notification
+   */
+  public hideNewest(): void {
     this.queueService.push({
-        type: 'HIDE_NEWEST',
+      type: 'HIDE_NEWEST',
     });
-}
-/**
- * API: Hide the oldest notification
- */
-hideOldest() {
+  }
+
+  /**
+   * API: Hide the oldest notification
+   */
+  public hideOldest(): void {
     this.queueService.push({
-        type: 'HIDE_OLDEST',
+      type: 'HIDE_OLDEST',
     });
-}
-/**
- * API: Hide all notifications at once
- */
-hideAll() {
+  }
+
+  /**
+   * API: Hide all notifications at once
+   */
+  public hideAll(): void {
     this.queueService.push({
-        type: 'HIDE_ALL',
+      type: 'HIDE_ALL',
     });
-}
-/**
- * API: Shortcut for showing a new notification
- *
- * @param type             Type of the notification
- * @param message          Message of the notification
- * @param [notificationId] Unique ID for the notification (optional)
- */
-notify(type: any, message: any, notificationId:any) {
-    const notificationOptions = {
-        message,
-        type,
-        id: null
+  }
+
+  /**
+   * API: Shortcut for showing a new notification
+   *
+   * @param type             Type of the notification
+   * @param message          Message of the notification
+   * @param [notificationId] Unique ID for the notification (optional)
+   */
+  public notify(type: string, message: string, notificationId?: string): void {
+    const notificationOptions: NotifierNotificationOptions = {
+      message,
+      type,
     };
     if (notificationId !== undefined) {
-        notificationOptions.id = notificationId;
+      notificationOptions.id = notificationId;
     }
     this.show(notificationOptions);
-}
+  }
 }
